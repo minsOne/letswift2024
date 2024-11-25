@@ -6,8 +6,9 @@
 //
 
 import UIKit
+import WebKit
 
-final class PaymentWebViewController: UIViewController {
+final class PaymentWebViewController: UIViewController, WKScriptMessageHandler {
     var pluginKeyList: [JSPluginKey.Type] {
         [
             PaymentPluginKey.self,
@@ -15,7 +16,9 @@ final class PaymentWebViewController: UIViewController {
         ]
     }
     
-    let supervisor = JSInterfaceSupervisor()
+    private let supervisor = JSInterfaceSupervisor()
+    private let messageHandler = "actionHandler"
+    private var webView: WKWebView?
 }
 
 extension PaymentWebViewController {
@@ -23,6 +26,7 @@ extension PaymentWebViewController {
         super.viewDidLoad()
         
         registerPlugin()
+        initWebView()
     }
     
     func registerPlugin() {
@@ -56,5 +60,44 @@ private extension PaymentWebViewController {
         }
         
         return plugin
+    }
+}
+
+extension PaymentWebViewController {
+    func initWebView() {
+        // WKUserContentController 인스턴스 생성
+        let userContentController = WKUserContentController()
+        userContentController.add(self, name: messageHandler) // 메시지 핸들러 등록
+        
+        // WKWebView에 WKUserContentController 설정
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+        
+        // WKWebView 인스턴스 생성
+        let webView = WKWebView(frame: view.bounds, configuration: configuration)
+        self.webView = webView
+        
+        // WKWebView를 뷰에 추가
+        view.addSubview(webView)
+        
+        // HTML 파일 로드
+        _ = Bundle.main.path(forResource: "index", ofType: "html")
+            .map { URL(fileURLWithPath: $0) }
+            .map { webView.loadFileURL($0, allowingReadAccessTo: $0) }
+    }
+
+    // WKScriptMessageHandler 프로토콜 메서드 구현
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        guard
+            let webView,
+            message.name == messageHandler,
+            let messageBody = message.body as? [String: Any],
+            let action = messageBody["action"] as? String
+        else { return }
+        
+        supervisor.resolve(action, message: messageBody, with: webView)
     }
 }

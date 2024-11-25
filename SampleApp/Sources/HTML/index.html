@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>iOS 웹뷰 호출</title>
+        <style>
+          /* 버튼을 화면 가운데 정렬하기 위한 컨테이너 */
+          .button-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 30px; /* 버튼 사이 간격 */
+            margin-top: 100px; /* 컨테이너가 상단에서 100px 떨어지도록 설정 */
+          }
+          
+          /* 버튼 스타일 */
+          .centered {
+            width: 300px; /* 버튼 너비를 더 크게 설정 */
+            padding: 20px 0; /* 버튼 안쪽 여백 */
+            font-size: 30px; /* 버튼 폰트 크기 */
+            cursor: pointer;
+          }
+        </style>
+      </head>
+  <body>
+    <div class="button-container">
+<button onclick="callLoading()" class="centered">Loading Action</button>
+<button onclick="callPayment()" class="centered">Payment Action</button>
+<button onclick="callAuth()" class="centered">Auth Action</button>
+<button onclick="callOpenCard()" class="centered">OpenCard Action</button>
+
+<script>
+  function callLoading() {
+    window.webkit.messageHandlers.actionHandler.postMessage({
+      "action": "loading",
+      "uuid": crypto.randomUUID(),
+      "body": {
+        "isShown": true
+      }
+    });
+  }
+  function callPayment() {
+    window.webkit.messageHandlers.actionHandler.postMessage({
+      "action": "payment",
+      "uuid": crypto.randomUUID(),
+      "body": {
+        "paymentAmount": 123456,
+        "paymentTransactionId": crypto.randomUUID(),
+        "paymentId": "202405100941223344",
+        "paymentGoodsName": "교촌치킨"
+      }
+    });
+  }
+</script>
+    </div>
+  </body>
+</html>

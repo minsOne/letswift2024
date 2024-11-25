@@ -7,28 +7,6 @@
 
 import WebKit
 
-struct LoadingPluginInfo
-{
-    let uuid: String
-    let isShow: Bool
-}
-
-final class LoadingPluginKey:
-    JSPluginKey,
-    JSPluginKeyType
-{
-    typealias Value = LoadingPluggable
-    var key: String { "loading" }
-}
-
-protocol LoadingPluggable: JSInterfacePluggable
-{
-    typealias Info = LoadingPluginInfo
-    
-    func set(
-        _ closure: @escaping (Info, WKWebView) -> Void)
-}
-
 final class LoadingPlugin:
     ScanJSPlugin,
     LoadingPluggable,
@@ -36,14 +14,36 @@ final class LoadingPlugin:
 {
     typealias KeyType = LoadingPluginKey
     let action = "loading"
-    
+
     func callAsAction(_ message: [String: Any],
-                      with: WKWebView) {}
-    func set(
-        _ closure: @escaping (Info, WKWebView) -> Void)
+                      with webView: WKWebView)
     {
+        guard
+            let result = Parser(message)
+        else { return }
+
+        closure?(result.info, webView)
+    }
+
+    func set(_ closure: @escaping (Info, WKWebView) -> Void) {
         self.closure = closure
     }
-    
+
     private var closure: ((Info, WKWebView) -> Void)?
+}
+
+private extension LoadingPlugin {
+    struct Parser {
+        let info: Info
+
+        init?(_ dictonary: [String: Any]) {
+            guard
+                let uuid = dictonary["uuid"] as? String,
+                let body = dictonary["body"] as? [String: Any],
+                let isShown = body["isShown"] as? Bool
+            else { return nil }
+
+            info = .init(uuid: uuid, isShown: isShown)
+        }
+    }
 }
